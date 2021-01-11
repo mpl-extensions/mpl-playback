@@ -1,10 +1,9 @@
-from unittest import mock
 import json
-from os import path
-from matplotlib import animation
-import numpy as np
+from unittest import mock
 
-path = path.realpath("file.py")
+import numpy as np
+from matplotlib import animation
+from tqdm import tqdm
 
 from util import exec_no_show
 
@@ -29,7 +28,15 @@ for event in event_data:
             setattr(events[-1][1], k, v)
 
 # hard coding axes. need to make a fake axis and then use transforms better
-(fake_mouse,) = gbl["axfreq"].plot([0, 5], [0, 1], "k", marker="^", markersize=15, transform=None, clip_on=False)
+# probs need to record the x/y in figure coordinates, then convert back to
+# display coords for mocking the events
+(fake_mouse,) = gbl["axfreq"].plot(
+    [0, 5], [0, 1], "k", marker="^", markersize=15, transform=None, clip_on=False
+)
+
+
+pbar = tqdm(total=len(events))
+
 
 def animate(i):
     event = events[i]
@@ -40,13 +47,14 @@ def animate(i):
 
     gbl["ax"].set_title(i)
     gbl["fig"].canvas.draw()
-    print(i)
+    pbar.update(1)
+    # print(i)
 
 
 ani = animation.FuncAnimation(
     gbl["fig"],
     animate,
-    np.arange(len(events)),
+    range(len(events)),
     init_func=init,
     interval=40,
     blit=False,

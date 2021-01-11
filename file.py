@@ -16,9 +16,9 @@
 # print(fig.canvas.callbacks.callbacks)
 # plt.show()
 
-import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Slider, Button
+import numpy as np
+from matplotlib.widgets import Button, Slider
 
 
 # The parametrized function to be plotted
