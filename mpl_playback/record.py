@@ -3,7 +3,7 @@ import json
 from functools import partial
 from os import path
 
-from util import exec_no_show
+from .util import exec_no_show
 
 __all__ = [
     "possible_events",

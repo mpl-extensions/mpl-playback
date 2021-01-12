@@ -21,3 +21,10 @@ help:
 
 open:
 	firefox _build/html/index.html
+
+open-gallery:
+	firefox _build/html/auto_examples/index.html
+
+gogogo:
+	rm -rf auto_examples
+	make html && make open-gallery

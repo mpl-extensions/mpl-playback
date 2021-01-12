@@ -33,9 +33,12 @@ release = "0.0.1"
 extensions = [
     "sphinx_gallery.gen_gallery",
 ]
+from mpl_playback.scraper import matplotlib_scraper
+
 sphinx_gallery_conf = {
-     'examples_dirs': '../examples',   # path to your example scripts
-     'gallery_dirs': 'auto_examples',  # path to where to save gallery generated output
+    "examples_dirs": "../examples",  # path to your example scripts
+    "gallery_dirs": "auto_examples",  # path to where to save gallery generated output
+    "image_scrapers": (matplotlib_scraper),
 }
 
 
