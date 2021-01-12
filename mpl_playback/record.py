@@ -4,7 +4,7 @@ from functools import partial
 from os import path
 from pathlib import Path
 
-from .util import exec_no_show
+from .util import exec_no_show, listify_dict
 from ._version import schema_version
 
 __all__ = [
@@ -32,14 +32,48 @@ possible_events = [
 event_list = []
 
 
-def print_event(event, fig, inv_locals):
+from matplotlib import axes
+
+
+import numpy as np
+
+
+def _find_obj(names, objs, obj):
+    """
+    find the name of the figure or axes.
+    TODO: Checks in nested lists and tuples
+    TODO: check in dictionaries
+    """
+    if obj is None:
+        return None
+
+    for name, maybe in zip(names, objs):
+        if obj is maybe:
+            return name
+        if isinstance(maybe, np.ndarray):
+            # gotta special case otherwise potential
+            # for ValueErrors when doing obj in numpy-array
+            if maybe.dtype == np.object:
+                if obj in maybe:
+                    return name, int(np.where(maybe == obj)[0][0])
+        elif isinstance(maybe, (list, tuple)) and obj in maybe:
+            return name, maybe.index(obj)
+        # elif isinstance(maybe, dict) and obj in maybe:
+        #     return _find_in_dict(maybe, dict)
+    raise ValueError(
+        f"Something has gone wrong while encoding: {str(obj)}"
+        " - please report this issue on https://github.com/ianhi/mpl-playback"
+    )
+
+
+def _record_event(event, fig, names, objs):
     info2save = [
         e for e in dir(event) if "_" not in e and e not in ["guiEvent", "lastevent"]
     ]
     saved_info = {k: getattr(event, k) for k in info2save}
     saved_info.pop("canvas")
-    saved_info["fig"] = inv_locals[fig]
-    saved_info["inaxes"] = inv_locals.get(saved_info["inaxes"], None)
+    saved_info["fig"] = _find_obj(names, objs, fig)
+    saved_info["inaxes"] = _find_obj(names, objs, saved_info["inaxes"])
     event_list.append(saved_info)
 
 
@@ -70,13 +104,14 @@ def record_figure(figname, globals, savename):
     globals : dict
     savename : str
     """
-    inv_globals = {
-        v: k for k, v in globals.items() if isinstance(v, collections.abc.Hashable)
-    }
+
+    # inv_globals = {
+    #     v: k for k, v in globals.items() if isinstance(v, collections.abc.Hashable)
+    # }
     record_events(
         globals[figname],
         ["motion_notify_event", "button_press_event", "button_release_event"],
-        inv_globals,
+        globals,
     )
     globals["plt"].show()
     with open(savename, "w") as fp:
@@ -90,8 +125,11 @@ def record_figure(figname, globals, savename):
         )
 
 
-def record_events(fig, events, inv_locals):
+def record_events(fig, events, globals):
+    names, objs = listify_dict(globals)
     if isinstance(events, str):
         events = [events]
     for e in events:
-        fig.canvas.mpl_connect(e, partial(print_event, fig=fig, inv_locals=inv_locals))
+        fig.canvas.mpl_connect(
+            e, partial(_record_event, fig=fig, names=names, objs=objs)
+        )
