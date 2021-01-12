@@ -2,6 +2,7 @@ import collections
 import json
 from functools import partial
 from os import path
+from pathlib import Path
 
 from .util import exec_no_show
 from ._version import schema_version
@@ -9,6 +10,8 @@ from ._version import schema_version
 __all__ = [
     "possible_events",
     "record_events",
+    "record_file",
+    "record_figure",
 ]
 possible_events = [
     "button_press_event",
@@ -40,31 +43,43 @@ def print_event(event, fig, inv_locals):
     event_list.append(saved_info)
 
 
-def record_events(fig, events, inv_locals):
-    if isinstance(events, str):
-        events = [events]
-    for e in events:
-        fig.canvas.mpl_connect(e, partial(print_event, fig=fig, inv_locals=inv_locals))
+def record_file(path, figname="fig"):
+    """
+    Parameters
+    ----------
+
+    path : str
+        The path to the file to be run
+    figname : str, default: fig
+        The variable name of the figure to capture
+    output : str or None, default: None
+        Defaults to ``_<file-name>-playback.json``
+    """
+    globals = exec_no_show(path)
+
+    out = "_" + Path(path).stem + "-playback.json"
+    record_figure(figname, globals, out)
 
 
-if __name__ == "__main__":
-    # execute most of the file
-    gbls = exec_no_show("file.py")
-
-    # set up recording
-    figname = "fig"
-    inv_locals = {
-        v: k for k, v in gbls.items() if isinstance(v, collections.abc.Hashable)
+def record_figure(figname, globals, savename):
+    """
+    Parameters
+    ----------
+    fig : str
+        The variable name of the figure
+    globals : dict
+    savename : str
+    """
+    inv_globals = {
+        v: k for k, v in globals.items() if isinstance(v, collections.abc.Hashable)
     }
     record_events(
-        gbls[figname],
+        globals[figname],
         ["motion_notify_event", "button_press_event", "button_release_event"],
-        inv_locals,
+        inv_globals,
     )
-
-    gbls["plt"].show()
-
-    with open("data.json", "w") as fp:
+    globals["plt"].show()
+    with open(savename, "w") as fp:
         json.dump(
             {
                 "figname": figname,
@@ -73,3 +88,10 @@ if __name__ == "__main__":
             },
             fp,
         )
+
+
+def record_events(fig, events, inv_locals):
+    if isinstance(events, str):
+        events = [events]
+    for e in events:
+        fig.canvas.mpl_connect(e, partial(print_event, fig=fig, inv_locals=inv_locals))
