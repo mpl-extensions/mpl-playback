@@ -54,6 +54,12 @@ from pathlib import Path
 
 from mpl_playback.playback import load_events, playback_events
 
+SINGLE_IMAGE = """
+.. image:: /{}
+    :alt: {}
+    :class: sphx-glr-single-img
+"""
+
 
 def matplotlib_scraper(block, block_vars, gallery_conf, **kwargs):
     """
@@ -101,11 +107,5 @@ def matplotlib_scraper(block, block_vars, gallery_conf, **kwargs):
     image_path_iterator = block_vars["image_path_iterator"]
     image_rsts = []
     plt.close("all")
-    rst = """
-        .. image:: /{}
-            :alt: {}
-            :class: sphx-glr-single-img
-        """.format(
-        image_path, "Animated gif of interaction"
-    )
+    rst = SINGLE_IMAGE.format(image_path, "Animated gif of interaction")
     return rst
