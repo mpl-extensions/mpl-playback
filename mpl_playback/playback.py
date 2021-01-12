@@ -8,6 +8,14 @@ from tqdm import tqdm
 import os
 from util import exec_no_show
 
+import matplotlib
+
+matplotlib.use("agg")
+
+__all__ = [
+    "playback",
+]
+
 
 def playback(events, path, output, prog_bar=True, **kwargs):
     """
@@ -28,8 +36,8 @@ def playback(events, path, output, prog_bar=True, **kwargs):
     if isinstance(events, str):
         with open("data.json") as f:
             loaded = json.load(f)
-            figname = loaded['figname']
-            events = loaded['events']
+            figname = loaded["figname"]
+            events = loaded["events"]
 
     gbl = exec_no_show("file.py")
     mock_events = []
@@ -48,8 +56,12 @@ def playback(events, path, output, prog_bar=True, **kwargs):
     # probs need to record the x/y in figure coordinates, then convert back to
     # display coords for mocking the events
     # use the last axis in order to get a high zorder
-    (fake_mouse,) = gbl[figname].axes[-1].plot(
-        [0, 5], [0, 1], "k", marker="6", markersize=15, transform=None, clip_on=False
+    (fake_mouse,) = (
+        gbl[figname]
+        .axes[-1]
+        .plot(
+            [0, 5], [0, 1], "k", marker=6, markersize=15, transform=None, clip_on=False
+        )
     )
 
     if prog_bar:
@@ -67,7 +79,7 @@ def playback(events, path, output, prog_bar=True, **kwargs):
         gbl[figname].canvas.draw()
         if prog_bar:
             pbar.update(1)
-            if i == len(events)-1:
+            if i == len(events) - 1:
                 print("done playing back, saving animation")
 
     interval = kwargs.pop("interval", 40)
@@ -80,7 +92,7 @@ def playback(events, path, output, prog_bar=True, **kwargs):
         **kwargs
     )
     dirname = os.path.dirname(output)
-    if not os.path.exists(dirname) and dirname not in ['', '.']:
+    if not os.path.exists(dirname) and dirname not in ["", "."]:
         os.makedirs(os.path.dirname(output))
     ani.save(output)
 

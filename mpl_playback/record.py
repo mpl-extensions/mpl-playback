@@ -5,6 +5,10 @@ from os import path
 
 from util import exec_no_show
 
+__all__ = [
+    "possible_events",
+    "record_events",
+]
 possible_events = [
     "button_press_event",
     "button_release_event",
@@ -42,20 +46,22 @@ def record_events(fig, events, inv_locals):
         fig.canvas.mpl_connect(e, partial(print_event, fig=fig, inv_locals=inv_locals))
 
 
-# execute most of the file
-gbls = exec_no_show("file.py")
+if __name__ == "__main__":
+    # execute most of the file
+    gbls = exec_no_show("file.py")
 
-# set up recording
-figname = 'fig'
-inv_locals = {v: k for k, v in gbls.items() if isinstance(v, collections.abc.Hashable)}
-record_events(
-    gbls[figname],
-    ["motion_notify_event", "button_press_event", "button_release_event"],
-    inv_locals,
-)
+    # set up recording
+    figname = "fig"
+    inv_locals = {
+        v: k for k, v in gbls.items() if isinstance(v, collections.abc.Hashable)
+    }
+    record_events(
+        gbls[figname],
+        ["motion_notify_event", "button_press_event", "button_release_event"],
+        inv_locals,
+    )
 
-gbls["plt"].show()
+    gbls["plt"].show()
 
-
-with open("data.json", "w") as fp:
-    json.dump({'figname': figname, 'events':event_list}, fp)
+    with open("data.json", "w") as fp:
+        json.dump({"figname": figname, "events": event_list}, fp)
