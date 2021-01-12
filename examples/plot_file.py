@@ -1,21 +1,10 @@
-# import numpy as np
+"""
+=============
+wow such test
+=============
 
-# import matplotlib.pyplot as plt
-
-# fig, ax = plt.subplots()
-
-# t = np.linspace(0, np.pi*2)
-
-# line, = ax.plot(t, np.sin(t))
-
-# def update(event):
-#     if event.inaxes is not None:
-#         line.set_ydata(np.sin(t*event.xdata))
-#     fig.canvas.draw()
-# fig.canvas.mpl_connect('motion_notify_event', update)
-# print(fig.canvas.callbacks.callbacks)
-# plt.show()
-
+blah blah blah
+"""
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.widgets import Button, Slider
