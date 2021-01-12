@@ -1,0 +1,23 @@
+include README.md
+
+# Documentation
+graft docs
+exclude docs/\#*
+prune docs/build
+prune docs/_build
+prune docs/gh-pages
+prune docs/dist
+prune docs/docs
+
+# Licenses
+graft LICENSE
+
+# Examples
+graft examples
+
+# Patterns to exclude from any directory
+global-exclude *~
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude .git
+global-exclude .ipynb_checkpoints
