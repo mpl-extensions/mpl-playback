@@ -23,7 +23,6 @@ setup_args = dict(
     packages=find_packages(),
     install_requires=[
         "matplotlib>=3.3",
-        "tqdm",
     ],
     author="Ian Hunt-Isaak",
     author_email="ianhuntisaak@gmail.com",

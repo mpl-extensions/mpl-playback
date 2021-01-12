@@ -5,9 +5,14 @@ from unittest import mock
 import matplotlib
 import numpy as np
 from matplotlib import animation
-from tqdm import tqdm
-
 from .util import exec_no_show
+
+_prog_bar = True
+try:
+    from tqdm import tqdm
+except ImportError:
+    _prog_bar = False
+
 
 matplotlib.use("agg")
 
@@ -91,7 +96,7 @@ def playback_events(figname, events, globals, output, prog_bar=True, **kwargs):
         )
     )
 
-    if prog_bar:
+    if prog_bar and _prog_bar:
         pbar = tqdm(total=len(events))
 
     def init():
@@ -104,10 +109,8 @@ def playback_events(figname, events, globals, output, prog_bar=True, **kwargs):
             fake_mouse.set_data(event.x, event.y)
 
         globals[figname].canvas.draw()
-        if prog_bar:
+        if prog_bar and _prog_bar:
             pbar.update(1)
-            if i == len(events) - 1:
-                print("done playing back, saving animation")
 
     interval = kwargs.pop("interval", 40)
     ani = animation.FuncAnimation(
