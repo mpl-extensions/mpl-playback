@@ -46,10 +46,8 @@ setup_args = dict(
     extras_require={
         "doc": [
             "sphinx>=1.5",
-            "mock",
             "sphinx-copybutton",
-            "sphinx-autobuild",
-            "xarray",
+            "sphinx_gallery",
         ],
         "test": [
             "black",
