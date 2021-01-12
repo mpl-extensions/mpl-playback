@@ -37,7 +37,9 @@ from mpl_playback.scraper import matplotlib_scraper
 
 sphinx_gallery_conf = {
     "examples_dirs": "../examples",  # path to your example scripts
-    "gallery_dirs": "auto_examples",  # path to where to save gallery generated output
+    "gallery_dirs": "gallery",  # path to where to save gallery generated output
+    "filename_pattern": "/*",
+    "ignore_pattern": r"_gen_images.py",
     "image_scrapers": (matplotlib_scraper),
 }
 

@@ -23,8 +23,8 @@ open:
 	firefox _build/html/index.html
 
 open-gallery:
-	firefox _build/html/auto_examples/index.html
+	firefox _build/html/gallery/index.html
 
 gogogo:
-	rm -rf auto_examples
+	rm -rf gallery
 	make html && make open-gallery

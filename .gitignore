@@ -139,4 +139,4 @@ cython_debug/
 
 # sphinx stuff
 _build
-auto_examples
+gallery
