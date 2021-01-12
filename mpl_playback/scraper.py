@@ -69,7 +69,7 @@ def matplotlib_scraper(block, block_vars, gallery_conf, **kwargs):
     it will generate a gif using mpl-playback. Looks a file ``_<file name>-playback.json``.
 
     Rest of docstring is taken directly from sphinx-gallery:
-    
+
     Scrape Matplotlib images.
 
     Based on the matplotlib_scraper included in sphinx-gallery
