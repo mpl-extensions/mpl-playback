@@ -46,14 +46,16 @@ def record_events(fig, events, inv_locals):
 gbls = exec_no_show("file.py")
 
 # set up recording
+figname = 'fig'
 inv_locals = {v: k for k, v in gbls.items() if isinstance(v, collections.abc.Hashable)}
 record_events(
-    gbls["fig"],
+    gbls[figname],
     ["motion_notify_event", "button_press_event", "button_release_event"],
     inv_locals,
 )
 
 gbls["plt"].show()
 
+
 with open("data.json", "w") as fp:
-    json.dump(event_list, fp)
+    json.dump({'figname': figname, 'events':event_list}, fp)
