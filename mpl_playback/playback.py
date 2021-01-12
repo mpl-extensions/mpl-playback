@@ -6,6 +6,7 @@ import matplotlib
 import numpy as np
 from matplotlib import animation
 from .util import exec_no_show
+from ._version import schema_version
 
 _prog_bar = True
 try:
@@ -45,6 +46,7 @@ def load_events(events):
         with open(events) as f:
             loaded = json.load(f)
             meta["figname"] = loaded["figname"]
+            meta["schema-version"] = loaded["schema-version"]
             events = loaded["events"]
     return meta, events
 

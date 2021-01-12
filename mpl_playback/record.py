@@ -4,6 +4,7 @@ from functools import partial
 from os import path
 
 from .util import exec_no_show
+from ._version import schema_version
 
 __all__ = [
     "possible_events",
@@ -64,4 +65,11 @@ if __name__ == "__main__":
     gbls["plt"].show()
 
     with open("data.json", "w") as fp:
-        json.dump({"figname": figname, "events": event_list}, fp)
+        json.dump(
+            {
+                "figname": figname,
+                "schema-version": schema_version,
+                "events": event_list,
+            },
+            fp,
+        )
