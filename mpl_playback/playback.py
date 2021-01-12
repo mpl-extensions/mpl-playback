@@ -81,15 +81,13 @@ def playback_events(figname, events, globals, output, prog_bar=True, **kwargs):
     ----------
 
     """
-    print("here1")
-    print(globals.keys())
     mock_events = gen_mock_events(events, globals)
-    print("here2")
 
-    # hard coding axes. need to make a fake axis and then use transforms better
-    # probs need to record the x/y in figure coordinates, then convert back to
-    # display coords for mocking the events
-    # use the last axis in order to get a high zorder
+    # need to use transforms better probs need to record the x/y in
+    # figure coordinates, then convert back to display coords for mocking
+    # the events
+
+    # Here use the last axis in order to get a high zorder
     (fake_mouse,) = (
         globals[figname]
         .axes[-1]

@@ -12,6 +12,7 @@ from warnings import filterwarnings
 
 from sphinx.errors import ExtensionError
 from sphinx_gallery.utils import optipng, scale_image
+from sphinx_gallery.scrapers import matplotlib_scraper as _matplotlib_scraper
 
 from .playback import playback_events
 from .record import record_events
@@ -63,6 +64,12 @@ SINGLE_IMAGE = """
 
 def matplotlib_scraper(block, block_vars, gallery_conf, **kwargs):
     """
+    A drop in replacement for the sphinx-gallery matplotlib scraper that will
+    also check if there are playback files associated with the example. In that case
+    it will generate a gif using mpl-playback. Looks a file ``_<file name>-playback.json``.
+
+    Rest of docstring is taken directly from sphinx-gallery:
+    
     Scrape Matplotlib images.
 
     Based on the matplotlib_scraper included in sphinx-gallery
@@ -88,20 +95,17 @@ def matplotlib_scraper(block, block_vars, gallery_conf, **kwargs):
         The ReSTructuredText that will be rendered to HTML containing
         the images. This is often produced by :func:`figure_rst`.
     """
-    matplotlib, plt = _import_matplotlib()
-    # import os
+    # check if there is a playback file
+    p = Path(block_vars["src_file"])
+    events_path = p.parent.joinpath(f"_{p.stem}-playback.json")
 
-    # print("======================")
-    # print(block_vars['src_file'])
-    # print(block_vars['fake_main'])
-    # print("======================")
-    # print(os.getcwd())
+    if not events_path.exists():
+        return _matplotlib_scraper(block, block_vars, gallery_conf, **kwargs)
+
+    matplotlib, plt = _import_matplotlib()
     image_path = next(block_vars["image_path_iterator"]).replace(".png", ".gif")
 
-    p = Path(block_vars["src_file"])
-    events_path = str(p.parent.joinpath(f"_{p.stem}-playback.json"))
-
-    meta, events = load_events(events_path)
+    meta, events = load_events(str(events_path))
     playback_events(meta["figname"], events, block_vars["example_globals"], image_path)
 
     image_path_iterator = block_vars["image_path_iterator"]
