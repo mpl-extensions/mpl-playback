@@ -5,7 +5,7 @@ from unittest import mock
 import matplotlib
 import numpy as np
 from matplotlib import animation
-from .util import exec_no_show
+from .util import exec_no_show, listify_dict
 from ._version import schema_version
 
 _prog_bar = True
@@ -25,6 +25,23 @@ __all__ = [
 ]
 
 
+def _grab_obj(globals, key):
+    if isinstance(key, str):
+        return globals.get(key, None)
+    elif key is None:
+        return None
+    else:
+        base = globals.get(key[0], None)
+        if base is None:
+            return base
+        # TODO - do this in a clever way that generalizes to n deep nesting
+        if len(key) == 2:
+            return base[key[1]]
+        elif len(key) == 3:
+            return base[key[1]][key[2]]
+        raise ValueError("Nesting beyond 2 levels not yet supported")
+
+
 def gen_mock_events(events, globals):
     mock_events = []
     for event in events:
@@ -33,7 +50,7 @@ def gen_mock_events(events, globals):
             if k == "fig":
                 setattr(mock_event, "canvas", globals[v].canvas)
             elif k == "inaxes":
-                setattr(mock_event, "inaxes", globals.get(v, None))
+                setattr(mock_event, "inaxes", _grab_obj(globals, v))
             else:
                 setattr(mock_event, k, v)
         mock_events.append(mock_event)

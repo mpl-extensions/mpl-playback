@@ -10,7 +10,7 @@ Welcome to mpl-playback's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   auto_examples/index.rst
+   gallery/index.rst
 
 
 
