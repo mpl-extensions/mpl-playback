@@ -6,6 +6,16 @@
 Welcome to mpl-playback's documentation!
 ========================================
 
+A library to record and then playback user interactions with a Matplotlib
+figure. Also integrates with `sphinx-gallery <https://sphinx-gallery.github.io/stable/index.html>`_
+by providing a custom scraper so docs using widgets will render showing the interactions.
+See this in action in the :doc:`Gallery <gallery/index>`.
+
+Inspired by discussions here: https://github.com/matplotlib/matplotlib/issues/19222
+
+
+Developed on https://github.com/ianhi/mpl-playback PRs or comments welcome :)
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
