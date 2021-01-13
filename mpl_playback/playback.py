@@ -3,9 +3,13 @@ import os
 from unittest import mock
 
 import matplotlib
+
+matplotlib.use("Agg")
+
 import numpy as np
 from matplotlib import animation
-from .util import exec_no_show, listify_dict
+from matplotlib.animation import FFMpegWriter
+from .util import exec_no_show, listify_dict, extract_by_name
 from ._version import schema_version
 
 _prog_bar = True
@@ -13,9 +17,6 @@ try:
     from tqdm import tqdm
 except ImportError:
     _prog_bar = False
-
-
-matplotlib.use("agg")
 
 __all__ = [
     "gen_mock_events",
@@ -42,13 +43,14 @@ def _grab_obj(globals, key):
         raise ValueError("Nesting beyond 2 levels not yet supported")
 
 
-def gen_mock_events(events, globals):
+def gen_mock_events(events, globals, accessors):
     mock_events = []
     for event in events:
         mock_event = mock.Mock()
         for k, v in event.items():
             if k == "fig":
-                setattr(mock_event, "canvas", globals[v].canvas)
+                setattr(mock_event, "canvas", accessors[v].canvas)
+                setattr(mock_event, "_figname", v)
             elif k == "inaxes":
                 setattr(mock_event, "inaxes", _grab_obj(globals, v))
             else:
@@ -62,13 +64,13 @@ def load_events(events):
     if isinstance(events, str):
         with open(events) as f:
             loaded = json.load(f)
-            meta["figname"] = loaded["figname"]
+            meta["figures"] = loaded["figures"]
             meta["schema-version"] = loaded["schema-version"]
             events = loaded["events"]
     return meta, events
 
 
-def playback_file(events, path, output, prog_bar=True, **kwargs):
+def playback_file(events, path, outputs, prog_bar=True, **kwargs):
     """
     Parameters
     ----------
@@ -77,20 +79,22 @@ def playback_file(events, path, output, prog_bar=True, **kwargs):
         already loaded file.
     path : str
         path to the file to be executed.
-    output : str
-        The path to the output file
+    outputs : str or list of str
+        The path(s) to the output file(s)
     prog_bar : bool, default: True
         Whether to display a progressbar of animation progress.
     **kwargs :
         Passed through to `FuncAnimation`.
     """
+    if isinstance(outputs, str):
+        outputs = [outputs]
     meta, events = load_events(events)
-    figname = meta["figname"]
+    figures = meta["figures"]
     gbl = exec_no_show(path)
-    playback_events(figname, events, gbl, output, prog_bar=prog_bar, **kwargs)
+    playback_events(figures, events, meta, gbl, outputs, prog_bar=prog_bar, **kwargs)
 
 
-def playback_events(figname, events, globals, output, prog_bar=True, **kwargs):
+def playback_events(figures, events, meta, globals, outputs, prog_bar=True, **kwargs):
     """
     plays back events that have been
 
@@ -98,47 +102,50 @@ def playback_events(figname, events, globals, output, prog_bar=True, **kwargs):
     ----------
 
     """
-    mock_events = gen_mock_events(events, globals)
-
-    # need to use transforms better probs need to record the x/y in
-    # figure coordinates, then convert back to display coords for mocking
-    # the events
-
-    # Here use the last axis in order to get a high zorder
-    (fake_mouse,) = (
-        globals[figname]
-        .axes[-1]
-        .plot(
+    fps = 15
+    accessors = {}
+    fake_cursors = {}
+    writers = []
+    _figs = []  # the actual figure objects
+    for fig, out in zip(figures, outputs):
+        _fig = extract_by_name(fig, globals)
+        _figs.append(_fig)
+        # need to use transforms better probs need to record the x/y in
+        # figure coordinates, then convert back to display coords for mocking
+        # the events
+        # Here use the last axis in order to get a high zorder
+        accessors[fig] = _fig
+        fake_cursors[fig] = _fig.axes[-1].plot(
             [0, 5], [0, 1], "k", marker=6, markersize=15, transform=None, clip_on=False
-        )
-    )
+        )[0]
+        writers.append(FFMpegWriter(fps, out))
+        writers[-1].setup(_fig, out, len(events))
+
+    mock_events = gen_mock_events(events, globals, accessors)
 
     if prog_bar and _prog_bar:
         pbar = tqdm(total=len(events))
 
-    def init():
-        pass
-
     def animate(i):
         event = mock_events[i]
-        globals[figname].canvas.callbacks.process(event.name, event)
+        accessors[event._figname].canvas.callbacks.process(event.name, event)
         if event.name == "motion_notify_event":
-            fake_mouse.set_data(event.x, event.y)
+            fake_cursors[event._figname].set_data(event.x, event.y)
+            fake_cursors[event._figname].set_visible(True)
 
-        globals[figname].canvas.draw()
+        # theres got to be a clever way to avoid doing these gazillion draws
+        for f in _figs:
+            f.canvas.draw()
+        # accessors[event._figname].canvas.draw()
         if prog_bar and _prog_bar:
             pbar.update(1)
+        for w in writers:
+            w.grab_frame()
+        # now set the cursor invisible so multiple don't show up
+        # if there are multiple figures
+        fake_cursors[event._figname].set_visible(False)
 
-    interval = kwargs.pop("interval", 40)
-    ani = animation.FuncAnimation(
-        globals[figname],
-        animate,
-        range(len(events)),
-        init_func=init,
-        interval=interval,
-        **kwargs
-    )
-    dirname = os.path.dirname(output)
-    if not os.path.exists(dirname) and dirname not in ["", "."]:
-        os.makedirs(os.path.dirname(output))
-    ani.save(output)
+    for i in range(len(events)):
+        animate(i)
+    for w in writers:
+        w.finish()
