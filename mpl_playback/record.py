@@ -77,7 +77,7 @@ def _record_event(event, fig, names, objs, accessors):
     ]
     saved_info = {k: getattr(event, k) for k in info2save}
     saved_info.pop("canvas")
-    saved_info["fig"] = _find_obj(names, objs, fig, accessors)
+    saved_info["fig"] = _find_obj(names, objs, event.canvas.figure, accessors)
     saved_info["inaxes"] = _find_obj(names, objs, saved_info["inaxes"], accessors)
     event_list.append(saved_info)
 

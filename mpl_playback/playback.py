@@ -106,17 +106,24 @@ def playback_events(figures, events, meta, globals, outputs, prog_bar=True, **kw
     accessors = {}
     fake_cursors = {}
     writers = []
-    _figs = []  # the actual figure objects
+    _figs = {}  # the actual figure objects
+    transforms = {}
     for fig, out in zip(figures, outputs):
         _fig = extract_by_name(fig, globals)
-        _figs.append(_fig)
-        # need to use transforms better probs need to record the x/y in
-        # figure coordinates, then convert back to display coords for mocking
-        # the events
-        # Here use the last axis in order to get a high zorder
+        _figs[fig] = _fig
+        # pre invert for performance (i have no idea if this owuld get cached.)
+        # but if it's inverting a matrix then it's bad news to constantly invert
+        transforms[fig] = _fig.transFigure.inverted().frozen()
         accessors[fig] = _fig
-        fake_cursors[fig] = _fig.axes[-1].plot(
-            [0, 5], [0, 1], "k", marker=6, markersize=15, transform=None, clip_on=False
+        fake_cursors[fig] = _fig.axes[0].plot(
+            [0, 0],
+            [0, 0],
+            "k",
+            marker=6,
+            markersize=15,
+            transform=_fig.transFigure,  # confusing that this is necessary, see note in animate below
+            clip_on=False,
+            zorder=99999,
         )[0]
         writers.append(FFMpegWriter(fps, out))
         writers[-1].setup(_fig, out, len(events))
@@ -130,22 +137,33 @@ def playback_events(figures, events, meta, globals, outputs, prog_bar=True, **kw
         event = mock_events[i]
         accessors[event._figname].canvas.callbacks.process(event.name, event)
         if event.name == "motion_notify_event":
-            fake_cursors[event._figname].set_data(event.x, event.y)
+
+            # It really seems as though this transform should be uncessary
+            # and with only a single figure it is uncesssary. But for reasons that
+            # are beyond me, when there are multiple figures this transform is crucial
+            # or else the cursor will show up in a weirdly scaled position
+            # this is true even with setting `transform=None` on the origin `plot` call
+            f = _figs[event._figname]
+            xy = transforms[event._figname].transform([event.x, event.y])
+            fake_cursors[event._figname].set_data([xy[0]], [xy[1]])
             fake_cursors[event._figname].set_visible(True)
 
         # theres got to be a clever way to avoid doing these gazillion draws
-        for f in _figs:
+        # maybe monkeypatching the figure's draw event?
+        for f in _figs.values():
             f.canvas.draw()
-        # accessors[event._figname].canvas.draw()
+
         if prog_bar and _prog_bar:
             pbar.update(1)
         for w in writers:
             w.grab_frame()
+
         # now set the cursor invisible so multiple don't show up
         # if there are multiple figures
         fake_cursors[event._figname].set_visible(False)
 
     for i in range(len(events)):
         animate(i)
+
     for w in writers:
         w.finish()
