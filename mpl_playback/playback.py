@@ -115,7 +115,7 @@ def playback_events(figures, events, meta, globals, outputs, prog_bar=True, **kw
         # but if it's inverting a matrix then it's bad news to constantly invert
         transforms[fig] = _fig.transFigure.inverted().frozen()
         accessors[fig] = _fig
-        fake_cursors[fig] = _fig.axes[0].plot(
+        fake_cursors[fig] = _fig.axes[-1].plot(
             [0, 0],
             [0, 0],
             "k",
