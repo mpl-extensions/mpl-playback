@@ -114,4 +114,4 @@ def matplotlib_scraper(block, block_vars, gallery_conf, **kwargs):
 
     # print(figure_rst(outputs, gallery_conf['src_dir'], ''))
     # TODO: Allow this to be vertically oriented
-    return figure_rst(outputs, gallery_conf['src_dir'], '')
+    return figure_rst(outputs, gallery_conf["src_dir"], "")

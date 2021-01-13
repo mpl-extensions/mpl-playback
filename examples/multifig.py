@@ -5,6 +5,9 @@ Multiple Figures
 
 Test case for putting multiple figures into sphinx gallery.
 
+The playback file was generated using:
+``record_file("multifig.py", ["slider_fig", "fig"])``
+
 """
 import numpy as np
 import matplotlib.pyplot as plt
@@ -35,9 +38,4 @@ def update(val):
 slider_fig, s_ax = plt.subplots(figsize=(6.4, 2))
 slider = Slider(s_ax, "freq", 0, 30, valinit=3)
 slider.on_changed(update)
-print("fig")
-print(fig.transFigure.inverted())
-print("slider")
-print(slider_fig.transFigure.inverted())
-print("==================\n\n")
 plt.show()
