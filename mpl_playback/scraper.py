@@ -13,6 +13,7 @@ from warnings import filterwarnings
 from sphinx.errors import ExtensionError
 from sphinx_gallery.utils import optipng, scale_image
 from sphinx_gallery.scrapers import matplotlib_scraper as _matplotlib_scraper
+from sphinx_gallery.scrapers import figure_rst
 
 from .playback import playback_events
 from .record import record_events
@@ -103,13 +104,14 @@ def matplotlib_scraper(block, block_vars, gallery_conf, **kwargs):
         return _matplotlib_scraper(block, block_vars, gallery_conf, **kwargs)
 
     matplotlib, plt = _import_matplotlib()
-    image_path = next(block_vars["image_path_iterator"]).replace(".png", ".gif")
 
     meta, events = load_events(str(events_path))
-    playback_events(meta["figname"], events, block_vars["example_globals"], image_path)
+    figures = meta["figures"]
+    outputs = []
+    for fig in figures:
+        outputs.append(next(block_vars["image_path_iterator"]).replace(".png", ".gif"))
+    playback_events(figures, events, meta, block_vars["example_globals"], outputs)
 
-    image_path_iterator = block_vars["image_path_iterator"]
-    image_rsts = []
-    plt.close("all")
-    rst = SINGLE_IMAGE.format(image_path, "Animated gif of interaction")
-    return rst
+    # print(figure_rst(outputs, gallery_conf['src_dir'], ''))
+    # TODO: Allow this to be vertically oriented
+    return figure_rst(outputs, gallery_conf["src_dir"], "")

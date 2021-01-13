@@ -6,6 +6,7 @@ import numpy as np
 __all__ = [
     "listify_dict",
     "exec_no_show",
+    "extract_by_name",
 ]
 
 
@@ -44,3 +45,12 @@ def listify_dict(d):
             names.append(k)
             objs.append(v)
     return names, objs
+
+
+def extract_by_name(name, globals):
+    """
+    https://stackoverflow.com/a/63331128/835607
+    """
+    loc = {}
+    exec(f"__fig = {name}", globals, loc)
+    return loc["__fig"]

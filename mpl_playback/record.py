@@ -4,7 +4,7 @@ from functools import partial
 from os import path
 from pathlib import Path
 
-from .util import exec_no_show, listify_dict
+from .util import exec_no_show, listify_dict, extract_by_name
 from ._version import schema_version
 
 __all__ = [
@@ -38,14 +38,19 @@ from matplotlib import axes
 import numpy as np
 
 
-def _find_obj(names, objs, obj):
+def _find_obj(names, objs, obj, accessors):
     """
+    accessors : dict
+        A dict of predefined ways to access objects.
+
     find the name of the figure or axes.
     TODO: Checks in nested lists and tuples
     TODO: check in dictionaries
     """
     if obj is None:
         return None
+    if obj in accessors:
+        return accessors[obj]
 
     for name, maybe in zip(names, objs):
         if obj is maybe:
@@ -66,58 +71,72 @@ def _find_obj(names, objs, obj):
     )
 
 
-def _record_event(event, fig, names, objs):
+def _record_event(event, fig, names, objs, accessors):
     info2save = [
         e for e in dir(event) if "_" not in e and e not in ["guiEvent", "lastevent"]
     ]
     saved_info = {k: getattr(event, k) for k in info2save}
     saved_info.pop("canvas")
-    saved_info["fig"] = _find_obj(names, objs, fig)
-    saved_info["inaxes"] = _find_obj(names, objs, saved_info["inaxes"])
+    saved_info["fig"] = _find_obj(names, objs, event.canvas.figure, accessors)
+    saved_info["inaxes"] = _find_obj(names, objs, saved_info["inaxes"], accessors)
     event_list.append(saved_info)
 
 
-def record_file(path, figname="fig"):
+def record_file(path, fig="fig", output=None):
     """
     Parameters
     ----------
 
     path : str
         The path to the file to be run
-    figname : str, default: fig
-        The variable name of the figure to capture
+    fig : str, default: fig
+        The variable name of the figure to capture. Can
+        also be a string that access objects. e.g.:
+        ``controls.fig`` or ``list_of_figures[0][1]``.
     output : str or None, default: None
         Defaults to ``_<file-name>-playback.json``
     """
     globals = exec_no_show(path)
 
-    out = "_" + Path(path).stem + "-playback.json"
-    record_figure(figname, globals, out)
+    if isinstance(fig, str):
+        fig = [fig]
+    if output is None:
+        output = "_" + Path(path).stem + "-playback.json"
+    record_figures(fig, globals, output)
 
 
-def record_figure(figname, globals, savename):
+def record_figure(fig, globals, savename, accessors=None):
+    record_figures([fig], globals, savename, accessors=None)
+
+
+def record_figures(figures, globals, savename, accessors=None):
     """
     Parameters
     ----------
-    fig : str
-        The variable name of the figure
+    fig : list of str
+        list of exec-able calls to obtain the figure.
     globals : dict
     savename : str
+    accessors : dict
+        Ways to access objects. Useful for figures or axes
     """
+    if accessors is None:
+        accessors = {}
 
-    # inv_globals = {
-    #     v: k for k, v in globals.items() if isinstance(v, collections.abc.Hashable)
-    # }
-    record_events(
-        globals[figname],
-        ["motion_notify_event", "button_press_event", "button_release_event"],
-        globals,
-    )
+    for fig in figures:
+        _fig = extract_by_name(fig, globals)
+        accessors[_fig] = fig
+        record_events(
+            _fig,
+            ["motion_notify_event", "button_press_event", "button_release_event"],
+            globals,
+            accessors,
+        )
     globals["plt"].show()
     with open(savename, "w") as fp:
         json.dump(
             {
-                "figname": figname,
+                "figures": figures,
                 "schema-version": schema_version,
                 "events": event_list,
             },
@@ -125,11 +144,16 @@ def record_figure(figname, globals, savename):
         )
 
 
-def record_events(fig, events, globals):
+def record_events(fig, events, globals, accessors=None):
+    if accessors is None:
+        accessors = {}
     names, objs = listify_dict(globals)
     if isinstance(events, str):
         events = [events]
     for e in events:
         fig.canvas.mpl_connect(
-            e, partial(_record_event, fig=fig, names=names, objs=objs)
+            e,
+            partial(
+                _record_event, fig=fig, names=names, objs=objs, accessors=accessors
+            ),
         )
