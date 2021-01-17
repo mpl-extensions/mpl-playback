@@ -44,11 +44,14 @@ def _grab_obj(globals, key):
 
 
 def gen_mock_events(events, globals, accessors):
+    times = []
     mock_events = []
     for event in events:
         mock_event = mock.Mock()
         for k, v in event.items():
-            if k == "fig":
+            if k == "time":
+                times.append(v)
+            elif k == "fig":
                 setattr(mock_event, "canvas", accessors[v].canvas)
                 setattr(mock_event, "_figname", v)
             elif k == "inaxes":
@@ -56,7 +59,7 @@ def gen_mock_events(events, globals, accessors):
             else:
                 setattr(mock_event, k, v)
         mock_events.append(mock_event)
-    return mock_events
+    return np.array(times), np.array(mock_events)
 
 
 def load_events(events):
@@ -70,7 +73,9 @@ def load_events(events):
     return meta, events
 
 
-def playback_file(events, path, outputs, prog_bar=True, **kwargs):
+def playback_file(
+    events, path, outputs, fps=24, from_first_event=True, prog_bar=True, **kwargs
+):
     """
     Parameters
     ----------
@@ -79,10 +84,17 @@ def playback_file(events, path, outputs, prog_bar=True, **kwargs):
         already loaded file.
     path : str
         path to the file to be executed.
-    outputs : str or list of str
-        The path(s) to the output file(s)
+    outputs : str, list of str, or None
+        The path(s) to the output file(s). If None then the
+        events will played back but no outputs will saved.
+    fps : int, default: 24
+        Frames per second of the output
+    from_first_event : bool, default: True
+        Whether playback should start from the timing of the first recorded
+        event or from when recording was initiated.
     prog_bar : bool, default: True
-        Whether to display a progressbar of animation progress.
+        Whether to display a progress bar. If tqdm is not
+        available then this kwarg has no effect.
     **kwargs :
         Passed through to `FuncAnimation`.
     """
@@ -91,18 +103,48 @@ def playback_file(events, path, outputs, prog_bar=True, **kwargs):
     meta, events = load_events(events)
     figures = meta["figures"]
     gbl = exec_no_show(path)
-    playback_events(figures, events, meta, gbl, outputs, prog_bar=prog_bar, **kwargs)
+    playback_events(
+        figures,
+        events,
+        meta,
+        gbl,
+        outputs,
+        fps,
+        from_first_event,
+        prog_bar=prog_bar,
+        **kwargs
+    )
 
 
-def playback_events(figures, events, meta, globals, outputs, prog_bar=True, **kwargs):
+def playback_events(
+    figures,
+    events,
+    meta,
+    globals,
+    outputs,
+    fps=24,
+    from_first_event=True,
+    prog_bar=True,
+    **kwargs
+):
     """
     plays back events that have been
 
     Parameters
     ----------
-
+    ....
+    outputs : list of str or None
+        The paths to outputs. If None then the events will played back but
+        no outputs will saved.
+    fps : int, default: 24
+        Frames per second of the output
+    from_first_event : bool, default: True
+        Whether playback should start from the timing of the first recorded
+        event or from when recording was initiated.
+    prog_bar : bool, default: True
+        Whether to display a progress bar. If tqdm is not
+        available then this kwarg has no effect.
     """
-    fps = 15
     accessors = {}
     fake_cursors = {}
     writers = []
@@ -125,45 +167,56 @@ def playback_events(figures, events, meta, globals, outputs, prog_bar=True, **kw
             clip_on=False,
             zorder=99999,
         )[0]
-        writers.append(FFMpegWriter(fps, out))
-        writers[-1].setup(_fig, out, len(events))
+        if outputs is not None:
+            writers.append(FFMpegWriter(fps, out))
+            writers[-1].setup(_fig, out, len(events))
 
-    mock_events = gen_mock_events(events, globals, accessors)
+    times, mock_events = gen_mock_events(events, globals, accessors)
+    if from_first_event:
+        times -= times[0]
+    N_frames = np.int(times[-1] * fps)
+    # map from frames to events
+    event_frames = np.round(times * fps)
 
     if prog_bar and _prog_bar:
-        pbar = tqdm(total=len(events))
+        pbar = tqdm(total=N_frames)
 
     def animate(i):
-        event = mock_events[i]
-        accessors[event._figname].canvas.callbacks.process(event.name, event)
-        if event.name == "motion_notify_event":
+        idx = event_frames == i
+        if np.sum(idx) != 0:
+            for event in mock_events[idx]:
+                # event = mock_events[i]
+                accessors[event._figname].canvas.callbacks.process(event.name, event)
+                if event.name == "motion_notify_event":
+                    # now set the cursor invisible so multiple don't show up
+                    # if there are multiple figures
+                    for fc in fake_cursors.values():
+                        fc.set_visible(False)
 
-            # It really seems as though this transform should be uncessary
-            # and with only a single figure it is uncesssary. But for reasons that
-            # are beyond me, when there are multiple figures this transform is crucial
-            # or else the cursor will show up in a weirdly scaled position
-            # this is true even with setting `transform=None` on the origin `plot` call
-            f = _figs[event._figname]
-            xy = transforms[event._figname].transform([event.x, event.y])
-            fake_cursors[event._figname].set_data([xy[0]], [xy[1]])
-            fake_cursors[event._figname].set_visible(True)
+                    # It really seems as though this transform should be uncessary
+                    # and with only a single figure it is uncesssary. But for reasons that
+                    # are beyond me, when there are multiple figures this transform is crucial
+                    # or else the cursor will show up in a weirdly scaled position
+                    # this is true even with setting `transform=None` on the origin `plot` call
+                    f = _figs[event._figname]
+                    xy = transforms[event._figname].transform([event.x, event.y])
+                    fake_cursors[event._figname].set_data([xy[0]], [xy[1]])
+                    fake_cursors[event._figname].set_visible(True)
 
-        # theres got to be a clever way to avoid doing these gazillion draws
-        # maybe monkeypatching the figure's draw event?
-        for f in _figs.values():
-            f.canvas.draw()
+                # theres got to be a clever way to avoid doing these gazillion draws
+                # maybe monkeypatching the figure's draw event?
+                for f in _figs.values():
+                    f.canvas.draw()
 
         if prog_bar and _prog_bar:
             pbar.update(1)
-        for w in writers:
-            w.grab_frame()
+        if outputs is not None:
+            for w in writers:
+                w.grab_frame()
 
-        # now set the cursor invisible so multiple don't show up
-        # if there are multiple figures
-        fake_cursors[event._figname].set_visible(False)
-
-    for i in range(len(events)):
+    for i in range(N_frames):
         animate(i)
 
-    for w in writers:
-        w.finish()
+    if outputs is not None:
+        for w in writers:
+            w.finish()

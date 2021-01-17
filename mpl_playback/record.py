@@ -6,6 +6,7 @@ from pathlib import Path
 
 from .util import exec_no_show, listify_dict, extract_by_name
 from ._version import schema_version
+from time import time
 
 __all__ = [
     "possible_events",
@@ -71,7 +72,7 @@ def _find_obj(names, objs, obj, accessors):
     )
 
 
-def _record_event(event, fig, names, objs, accessors):
+def _record_event(event, fig, names, objs, accessors, start_time):
     info2save = [
         e for e in dir(event) if "_" not in e and e not in ["guiEvent", "lastevent"]
     ]
@@ -79,6 +80,7 @@ def _record_event(event, fig, names, objs, accessors):
     saved_info.pop("canvas")
     saved_info["fig"] = _find_obj(names, objs, event.canvas.figure, accessors)
     saved_info["inaxes"] = _find_obj(names, objs, saved_info["inaxes"], accessors)
+    saved_info["time"] = time() - start_time
     event_list.append(saved_info)
 
 
@@ -145,6 +147,7 @@ def record_figures(figures, globals, savename, accessors=None):
 
 
 def record_events(fig, events, globals, accessors=None):
+    start_time = time()
     if accessors is None:
         accessors = {}
     names, objs = listify_dict(globals)
@@ -154,6 +157,11 @@ def record_events(fig, events, globals, accessors=None):
         fig.canvas.mpl_connect(
             e,
             partial(
-                _record_event, fig=fig, names=names, objs=objs, accessors=accessors
+                _record_event,
+                fig=fig,
+                names=names,
+                objs=objs,
+                accessors=accessors,
+                start_time=start_time,
             ),
         )
