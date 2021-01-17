@@ -8,7 +8,7 @@ matplotlib.use("Agg")
 
 import numpy as np
 from matplotlib import animation
-from matplotlib.animation import FFMpegWriter
+from matplotlib.animation import FFMpegWriter, ImageMagickWriter, PillowWriter, AVConvWriter
 from .util import exec_no_show, listify_dict, extract_by_name
 from ._version import schema_version
 
@@ -74,7 +74,14 @@ def load_events(events):
 
 
 def playback_file(
-    events, path, outputs, fps=24, from_first_event=True, prog_bar=True, **kwargs
+    events,
+    path,
+    outputs,
+    fps=24,
+    from_first_event=True,
+    prog_bar=True,
+    writer="ffmpeg-pillow",
+    **kwargs,
 ):
     """
     Parameters
@@ -95,8 +102,9 @@ def playback_file(
     prog_bar : bool, default: True
         Whether to display a progress bar. If tqdm is not
         available then this kwarg has no effect.
-    **kwargs :
-        Passed through to `FuncAnimation`.
+    writer : str, default: 'ffmpeg-pillow'
+        which writer to use. options 'ffmpeg', 'imagemagick', 'avconv', 'pillow'.
+        If the chosen writer is not available pillow will be used as a fallback.
     """
     if isinstance(outputs, str):
         outputs = [outputs]
@@ -112,7 +120,7 @@ def playback_file(
         fps,
         from_first_event,
         prog_bar=prog_bar,
-        **kwargs
+        writer=writers ** kwargs,
     )
 
 
@@ -125,7 +133,8 @@ def playback_events(
     fps=24,
     from_first_event=True,
     prog_bar=True,
-    **kwargs
+    writer="ffmpeg-pillow",
+    **kwargs,
 ):
     """
     plays back events that have been
@@ -148,6 +157,16 @@ def playback_events(
     accessors = {}
     fake_cursors = {}
     writers = []
+    if writer == 'ffmpeg' and FFMpegWriter.isAvailable():
+        writer = FFMpegWriter
+    elif writer == 'imagemagick' and ImageMagickWriter.isAvailable():
+        writer = ImageMagickWriter
+    elif writer == 'avconv' and AVConvWriter.isAvailable():
+        writer = AVConvWriter
+    else:
+        writer = PillowWriter
+
+
     _figs = {}  # the actual figure objects
     transforms = {}
     for fig, out in zip(figures, outputs):
@@ -168,7 +187,7 @@ def playback_events(
             zorder=99999,
         )[0]
         if outputs is not None:
-            writers.append(FFMpegWriter(fps, out))
+            writers.append(writer(fps))
             writers[-1].setup(_fig, out, len(events))
 
     times, mock_events = gen_mock_events(events, globals, accessors)
