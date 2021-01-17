@@ -13,6 +13,11 @@ See this in action in the :doc:`Gallery <gallery/index>`.
 
 Inspired by discussions here: https://github.com/matplotlib/matplotlib/issues/19222
 
+Q: Should you use this?
+
+A: Probably not. I mainly made this so that I could more easily test widget interactions https://github.com/ianhi/mpl-interactions
+
+For one off gifs of interactions it's almost certainly easier to just record your screen to make a gif.
 
 Developed on https://github.com/ianhi/mpl-playback PRs or comments welcome :)
 

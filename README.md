@@ -9,6 +9,11 @@ See https://mpl-playback.readthedocs.io/en/latest/gallery/index.html for an exam
 
 Directly inspired by https://github.com/matplotlib/matplotlib/issues/19222
 
-Example of a rendered gif:
+# Q: Should you use this?
+A: Probably not. I mainly made this so that I could more easily test widget interactions https://github.com/ianhi/mpl-interactions
+
+For one off gifs of interactions it's almost certainly easier to just record your screen to make a gif.
+
+### Example of a rendered gif:
 
 ![example of rendered gif](played-back.gif)
