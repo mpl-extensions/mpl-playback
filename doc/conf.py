@@ -16,13 +16,14 @@
 
 
 # -- Project information -----------------------------------------------------
+from mpl_playback import __version__
 
 project = "mpl-playback"
 copyright = "2021, Ian Hunt-Isaak"
 author = "Ian Hunt-Isaak"
 
 # The full version, including alpha/beta/rc tags
-release = "0.0.1"
+release = __version__
 
 
 # -- General configuration ---------------------------------------------------
