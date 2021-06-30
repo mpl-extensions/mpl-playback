@@ -9,6 +9,7 @@ matplotlib.use("Agg")
 import numpy as np
 from matplotlib import animation
 from matplotlib.animation import FFMpegWriter, ImageMagickWriter, PillowWriter, AVConvWriter
+from matplotlib.backend_bases import MouseButton
 from .util import exec_no_show, listify_dict, extract_by_name
 from ._version import schema_version
 
@@ -56,6 +57,10 @@ def gen_mock_events(events, globals, accessors):
                 setattr(mock_event, "_figname", v)
             elif k == "inaxes":
                 setattr(mock_event, "inaxes", _grab_obj(globals, v))
+            elif k == 'button':
+                if v is not None:
+                    v = MouseButton(v)
+                setattr(mock_event, "button", v)
             else:
                 setattr(mock_event, k, v)
         mock_events.append(mock_event)
@@ -120,7 +125,7 @@ def playback_file(
         fps,
         from_first_event,
         prog_bar=prog_bar,
-        writer=writers,
+        writer=writer,
         **kwargs,
     )
 
