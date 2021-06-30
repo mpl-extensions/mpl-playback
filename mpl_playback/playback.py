@@ -120,7 +120,8 @@ def playback_file(
         fps,
         from_first_event,
         prog_bar=prog_bar,
-        writer=writers ** kwargs,
+        writer=writers,
+        **kwargs,
     )
 
 
