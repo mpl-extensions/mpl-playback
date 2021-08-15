@@ -8,7 +8,12 @@ matplotlib.use("Agg")
 
 import numpy as np
 from matplotlib import animation
-from matplotlib.animation import FFMpegWriter, ImageMagickWriter, PillowWriter, AVConvWriter
+from matplotlib.animation import FFMpegWriter, ImageMagickWriter, PillowWriter
+try:
+    from matplotlib.animation import AVConvWriter
+except ImportError:
+    # remove in mpl 3.5+
+    AVConvWriter = None
 from matplotlib.backend_bases import MouseButton
 from .util import exec_no_show, listify_dict, extract_by_name
 from ._version import schema_version
@@ -167,7 +172,7 @@ def playback_events(
         writer = FFMpegWriter
     elif writer == 'imagemagick' and ImageMagickWriter.isAvailable():
         writer = ImageMagickWriter
-    elif writer == 'avconv' and AVConvWriter.isAvailable():
+    elif writer == 'avconv' and AVConvWriter is not None and AVConvWriter.isAvailable():
         writer = AVConvWriter
     else:
         writer = PillowWriter
