@@ -143,6 +143,7 @@ def record_figures(figures, globals, savename, accessors=None):
                 "events": event_list,
             },
             fp,
+            indent=4,
         )
 
 
