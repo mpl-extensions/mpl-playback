@@ -9,9 +9,10 @@ The playback file was generated using:
 ``record_file("multifig.py", ["slider_fig", "fig"])``
 
 """
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.widgets import Slider
+
 
 # The parametrized function to be plotted
 def f(t, amplitude, frequency):

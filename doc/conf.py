@@ -17,6 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 from mpl_playback import __version__
+from mpl_playback.scraper import matplotlib_scraper
 
 project = "mpl-playback"
 copyright = "2021, Ian Hunt-Isaak"
@@ -34,7 +35,6 @@ release = __version__
 extensions = [
     "sphinx_gallery.gen_gallery",
 ]
-from mpl_playback.scraper import matplotlib_scraper
 
 sphinx_gallery_conf = {
     "examples_dirs": "../examples",  # path to your example scripts

@@ -1,12 +1,12 @@
-import collections
 import json
 from functools import partial
-from os import path
 from pathlib import Path
-
-from .util import exec_no_show, listify_dict, extract_by_name
-from ._version import schema_version
 from time import time
+
+import numpy as np
+
+from ._schema_vesion import __schema_version__ as schema_version
+from .util import exec_no_show, extract_by_name, listify_dict
 
 __all__ = [
     "possible_events",
@@ -31,12 +31,6 @@ possible_events = [
 ]
 
 event_list = []
-
-
-from matplotlib import axes
-
-
-import numpy as np
 
 
 def _find_obj(names, objs, obj, accessors):
