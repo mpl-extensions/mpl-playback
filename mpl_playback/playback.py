@@ -1,4 +1,8 @@
+from __future__ import annotations
+
 import json
+from pathlib import Path
+from typing import Literal
 from unittest import mock
 
 import matplotlib
@@ -71,38 +75,37 @@ def gen_mock_events(events, globals, accessors):
     return np.array(times), np.array(mock_events)
 
 
-def load_events(events):
+def load_events(events: Path | str) -> tuple[dict, dict]:
     meta = {}
-    if isinstance(events, str):
-        with open(events) as f:
-            loaded = json.load(f)
-            meta["figures"] = loaded["figures"]
-            meta["schema-version"] = loaded["schema-version"]
-            events = loaded["events"]
+    with open(events) as f:
+        loaded = json.load(f)
+        meta["figures"] = loaded["figures"]
+        meta["schema-version"] = loaded["schema-version"]
+        events = loaded["events"]
     return meta, events
 
 
 def playback_file(
-    events,
-    path,
-    outputs,
+    events: Path | str,
+    path: Path | str,
+    outputs: str | list[str] | None,
     fps=24,
     from_first_event=True,
     prog_bar=True,
-    writer="ffmpeg-pillow",
+    writer: Literal["pillow", "ffmpeg", "imagemagick", "avconv", None] = "pillow",
     **kwargs,
 ):
     """
     Parameters
     ----------
-    events : str
+    events : pathlike
         Path to the json file defining the events or a dictionary of an
         already loaded file.
-    path : str
+    path : pathlike
         path to the file to be executed.
     outputs : str, list of str, or None
-        The path(s) to the output file(s). If None then the
-        events will played back but no outputs will saved.
+        The path(s) to the output file(s). If None then output names will
+        be automatically generated.
     fps : int, default: 24
         Frames per second of the output
     from_first_event : bool, default: True
@@ -111,14 +114,20 @@ def playback_file(
     prog_bar : bool, default: True
         Whether to display a progress bar. If tqdm is not
         available then this kwarg has no effect.
-    writer : str, default: 'ffmpeg-pillow'
+    writer : str, default: 'pillow'
         which writer to use. options 'ffmpeg', 'imagemagick', 'avconv', 'pillow'.
         If the chosen writer is not available pillow will be used as a fallback.
     """
-    if isinstance(outputs, str):
-        outputs = [outputs]
     meta, events = load_events(events)
     figures = meta["figures"]
+    if isinstance(outputs, str):
+        outputs = [outputs]
+    elif outputs is None:
+        outputs = []
+        path = Path(path)
+        output_base = str(path.name[: -len(path.suffix)])
+        for i in range(len(figures)):
+            outputs.append(output_base + f"_{i}.gif")
     gbl = exec_no_show(path)
     playback_events(
         figures,
@@ -143,7 +152,7 @@ def playback_events(
     fps=24,
     from_first_event=True,
     prog_bar=True,
-    writer="ffmpeg-pillow",
+    writer: Literal["pillow", "ffmpeg", "imagemagick", "avconv", None] = "pillow",
     **kwargs,
 ):
     """
@@ -203,7 +212,7 @@ def playback_events(
     times, mock_events = gen_mock_events(events, globals, accessors)
     if from_first_event:
         times -= times[0]
-    N_frames = np.int(times[-1] * fps)
+    N_frames = int(times[-1] * fps)
     # map from frames to events
     event_frames = np.round(times * fps)
 
@@ -250,3 +259,18 @@ def playback_events(
     if outputs is not None:
         for w in writers:
             w.finish()
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("py", type=str, nargs=1)
+    parser.add_argument("json", type=str, nargs=1)
+    parser.add_argument("-fps", type=int, default=24)
+    parser.add_argument("-o", "--output", type=str)
+    parser.add_argument("--writer", type=str, default="ffmpeg-pillow")
+    args = parser.parse_args()
+    playback_file(
+        args.json[0], args.py[0], args.output, fps=args.fps, writer=args.writer
+    )
