@@ -1,22 +1,18 @@
 import json
-import os
 from unittest import mock
 
 import matplotlib
-
-matplotlib.use("Agg")
-
 import numpy as np
-from matplotlib import animation
 from matplotlib.animation import FFMpegWriter, ImageMagickWriter, PillowWriter
+
 try:
     from matplotlib.animation import AVConvWriter
 except ImportError:
     # remove in mpl 3.5+
     AVConvWriter = None
 from matplotlib.backend_bases import MouseButton
-from .util import exec_no_show, listify_dict, extract_by_name
-from ._version import schema_version
+
+from .util import exec_no_show, extract_by_name
 
 _prog_bar = True
 try:
@@ -30,6 +26,9 @@ __all__ = [
     "playback_file",
     "playback_events",
 ]
+
+
+matplotlib.use("Agg")
 
 
 def _grab_obj(globals, key):
@@ -62,7 +61,7 @@ def gen_mock_events(events, globals, accessors):
                 setattr(mock_event, "_figname", v)
             elif k == "inaxes":
                 setattr(mock_event, "inaxes", _grab_obj(globals, v))
-            elif k == 'button':
+            elif k == "button":
                 if v is not None:
                     v = MouseButton(v)
                 setattr(mock_event, "button", v)
@@ -168,15 +167,14 @@ def playback_events(
     accessors = {}
     fake_cursors = {}
     writers = []
-    if writer == 'ffmpeg' and FFMpegWriter.isAvailable():
+    if writer == "ffmpeg" and FFMpegWriter.isAvailable():
         writer = FFMpegWriter
-    elif writer == 'imagemagick' and ImageMagickWriter.isAvailable():
+    elif writer == "imagemagick" and ImageMagickWriter.isAvailable():
         writer = ImageMagickWriter
-    elif writer == 'avconv' and AVConvWriter is not None and AVConvWriter.isAvailable():
+    elif writer == "avconv" and AVConvWriter is not None and AVConvWriter.isAvailable():
         writer = AVConvWriter
     else:
         writer = PillowWriter
-
 
     _figs = {}  # the actual figure objects
     transforms = {}
@@ -193,7 +191,8 @@ def playback_events(
             "k",
             marker=6,
             markersize=15,
-            transform=_fig.transFigure,  # confusing that this is necessary, see note in animate below
+            # confusing that this is necessary, see note in animate below
+            transform=_fig.transFigure,
             clip_on=False,
             zorder=99999,
         )[0]
@@ -224,10 +223,11 @@ def playback_events(
                         fc.set_visible(False)
 
                     # It really seems as though this transform should be uncessary
-                    # and with only a single figure it is uncesssary. But for reasons that
-                    # are beyond me, when there are multiple figures this transform is crucial
-                    # or else the cursor will show up in a weirdly scaled position
-                    # this is true even with setting `transform=None` on the origin `plot` call
+                    # and with only a single figure it is uncesssary. But for reasons
+                    # that are beyond me, when there are multiple figures this
+                    # transform is crucial or else the cursor will show up in a weirdly
+                    # scaled position. This is true even with setting `transform=None`
+                    # on the origin `plot` call
                     f = _figs[event._figname]
                     xy = transforms[event._figname].transform([event.x, event.y])
                     fake_cursors[event._figname].set_data([xy[0]], [xy[1]])

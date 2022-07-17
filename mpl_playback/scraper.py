@@ -2,21 +2,14 @@
 file heavily based on/taken from the sphinx-gallery version
 https://github.com/sphinx-gallery/sphinx-gallery/blob/ecd399e2e60557875d9312a6f5f8dbe4d0dd7a0e/sphinx_gallery/scrapers.py
 """
-import os
-import re
-import sys
-from distutils.version import LooseVersion
 from pathlib import Path
-from textwrap import indent
 from warnings import filterwarnings
 
 from sphinx.errors import ExtensionError
-from sphinx_gallery.utils import optipng, scale_image
-from sphinx_gallery.scrapers import matplotlib_scraper as _matplotlib_scraper
 from sphinx_gallery.scrapers import figure_rst
+from sphinx_gallery.scrapers import matplotlib_scraper as _matplotlib_scraper
 
-from .playback import playback_events
-from .record import record_events
+from .playback import load_events, playback_events
 
 
 def _import_matplotlib():
@@ -52,10 +45,6 @@ def _import_matplotlib():
     return matplotlib, plt
 
 
-from pathlib import Path
-
-from mpl_playback.playback import load_events, playback_events
-
 SINGLE_IMAGE = """
 .. image:: /{}
     :alt: {}
@@ -67,7 +56,8 @@ def matplotlib_scraper(block, block_vars, gallery_conf, **kwargs):
     """
     A drop in replacement for the sphinx-gallery matplotlib scraper that will
     also check if there are playback files associated with the example. In that case
-    it will generate a gif using mpl-playback. Looks a file ``_<file name>-playback.json``.
+    it will generate a gif using mpl-playback.
+    Looks a file ``_<file name>-playback.json``.
 
     Rest of docstring is taken directly from sphinx-gallery:
 

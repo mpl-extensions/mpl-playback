@@ -1,7 +1,6 @@
-from matplotlib.figure import Figure
-from matplotlib.axes import Axes
-from matplotlib.axes import SubplotBase
 import numpy as np
+from matplotlib.axes import Axes, SubplotBase
+from matplotlib.figure import Figure
 
 __all__ = [
     "listify_dict",
