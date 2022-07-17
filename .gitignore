@@ -140,3 +140,5 @@ cython_debug/
 # sphinx stuff
 _build
 gallery
+
+mpl_playback/_version.py
