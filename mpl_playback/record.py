@@ -13,6 +13,7 @@ __all__ = [
     "record_events",
     "record_file",
     "record_figure",
+    "RECORDED_EVENTS",
 ]
 possible_events = [
     "button_press_event",
@@ -31,6 +32,10 @@ possible_events = [
 ]
 
 event_list = []
+
+RECORDED_EVENTS = (
+    ["motion_notify_event", "button_press_event", "button_release_event"],
+)
 
 
 def _find_obj(names, objs, obj, accessors):
@@ -124,7 +129,7 @@ def record_figures(figures, globals, savename, accessors=None):
         accessors[_fig] = fig
         record_events(
             _fig,
-            ["motion_notify_event", "button_press_event", "button_release_event"],
+            RECORDED_EVENTS,
             globals,
             accessors,
         )
@@ -160,3 +165,14 @@ def record_events(fig, events, globals, accessors=None):
                 start_time=start_time,
             ),
         )
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("file", type=str, nargs=1)
+    parser.add_argument("-figs", "--figures", nargs="+", default=["fig"])
+    parser.add_argument("-o", "--output", type=str)
+    args = parser.parse_args()
+    record_file(args.file[0], args.figures, args.output)
