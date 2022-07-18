@@ -33,9 +33,7 @@ possible_events = [
 
 event_list = []
 
-RECORDED_EVENTS = (
-    ["motion_notify_event", "button_press_event", "button_release_event"],
-)
+RECORDED_EVENTS = ["motion_notify_event", "button_press_event", "button_release_event"]
 
 
 def _find_obj(names, objs, obj, accessors):
