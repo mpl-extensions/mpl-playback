@@ -28,9 +28,8 @@ A: Depends on what you want. For one off gifs of interactions it's almost certai
 
 
 ```{toctree}
-
-```{toctree}
 :maxdepth: 3
+
 gallery/index
 commandline
 sphinx-gallery
