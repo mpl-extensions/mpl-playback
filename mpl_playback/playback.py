@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Literal
 from unittest import mock
+from contextlib import contextmanager
 
 import matplotlib
 import numpy as np
@@ -219,12 +220,26 @@ def playback_events(
     if prog_bar and _prog_bar:
         pbar = tqdm(total=N_frames)
 
+    def fake_draw(*args, **kwargs):
+        pass
+
+    @contextmanager
+    def patch_draw(fig):
+        orig_draw = fig.canvas.draw
+        try:
+            fig.canvas.draw = fake_draw
+            yield
+        finally:
+            fig.canvas.draw = orig_draw
+
     def animate(i):
         idx = event_frames == i
         if np.sum(idx) != 0:
             for event in mock_events[idx]:
                 # event = mock_events[i]
-                accessors[event._figname].canvas.callbacks.process(event.name, event)
+                fig = accessors[event._figname]
+                with patch_draw(fig):
+                    fig.canvas.callbacks.process(event.name, event)
                 if event.name == "motion_notify_event":
                     # now set the cursor invisible so multiple don't show up
                     # if there are multiple figures
@@ -237,15 +252,9 @@ def playback_events(
                     # transform is crucial or else the cursor will show up in a weirdly
                     # scaled position. This is true even with setting `transform=None`
                     # on the origin `plot` call
-                    f = _figs[event._figname]
                     xy = transforms[event._figname].transform([event.x, event.y])
                     fake_cursors[event._figname].set_data([xy[0]], [xy[1]])
                     fake_cursors[event._figname].set_visible(True)
-
-                # theres got to be a clever way to avoid doing these gazillion draws
-                # maybe monkeypatching the figure's draw event?
-                for f in _figs.values():
-                    f.canvas.draw()
 
         if prog_bar and _prog_bar:
             pbar.update(1)
