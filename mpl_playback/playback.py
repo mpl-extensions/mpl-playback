@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import json
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Literal
 from unittest import mock
-from contextlib import contextmanager
 
 import matplotlib
 import numpy as np
