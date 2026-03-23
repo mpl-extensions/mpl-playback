@@ -37,7 +37,7 @@ def listify_dict(d):
     objs = []
     for k, v in d.items():
         if isinstance(v, (list, tuple, dict, np.ndarray, Axes, SubplotBase, Figure)):
-            if isinstance(v, np.ndarray) and not v.dtype == np.object:
+            if isinstance(v, np.ndarray) and not v.dtype == object:
                 continue
             if "__" in k:
                 continue
