@@ -56,7 +56,7 @@ def _find_obj(names, objs, obj, accessors):
         if isinstance(maybe, np.ndarray):
             # gotta special case otherwise potential
             # for ValueErrors when doing obj in numpy-array
-            if maybe.dtype == np.object:
+            if maybe.dtype == object:
                 if obj in maybe:
                     return name, int(np.where(maybe == obj)[0][0])
         elif isinstance(maybe, (list, tuple)) and obj in maybe:
