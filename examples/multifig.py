@@ -9,6 +9,7 @@ The playback file was generated using:
 ``record_file("multifig.py", ["slider_fig", "fig"])``
 
 """
+
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.widgets import Slider
