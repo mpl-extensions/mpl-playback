@@ -2,6 +2,7 @@
 file heavily based on/taken from the sphinx-gallery version
 https://github.com/sphinx-gallery/sphinx-gallery/blob/ecd399e2e60557875d9312a6f5f8dbe4d0dd7a0e/sphinx_gallery/scrapers.py
 """
+
 from pathlib import Path
 from warnings import filterwarnings
 

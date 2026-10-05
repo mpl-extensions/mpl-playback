@@ -7,6 +7,7 @@ This file is the same as :doc:`/gallery/dynamic` but
 does not have an associated playback file, so the scraper falls back to
 the sphinx-gallery matplotlib scraper.
 """
+
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.widgets import Button, Slider

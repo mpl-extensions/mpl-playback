@@ -7,6 +7,7 @@ This example has an associated playback file: ``_plot_dynamic-playback.json``
 so the ``mpl_playback`` sphinx-gallery scraper will be used to generate a gif
 to embed in the gallery. Contrast this with :doc:`/gallery/static`
 """
+
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.widgets import Button, Slider
